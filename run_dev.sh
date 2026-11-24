@@ -8,9 +8,20 @@ echo "=========================================================="
 echo "🌾 Starting Bhumi Drishti (ভূমি দৃষ্টি) Services"
 echo "=========================================================="
 
+# Detect Python binary (.venv, Windows Git Bash, or active environment)
+if [ -f "$DIR/.venv/bin/python3" ]; then
+    PY_BIN="$DIR/.venv/bin/python3"
+elif [ -f "$DIR/.venv/Scripts/python.exe" ]; then
+    PY_BIN="$DIR/.venv/Scripts/python.exe"
+elif command -v python3 >/dev/null 2>&1; then
+    PY_BIN="python3"
+else
+    PY_BIN="python"
+fi
+
 # 1. Start FastAPI Backend on port 8000
 echo "--> Launching FastAPI Backend on http://localhost:8000..."
-"$DIR/.venv/bin/python3" -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload &
+"$PY_BIN" -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload &
 BACKEND_PID=$!
 
 # 2. Start TanStack Start Frontend on port 3000

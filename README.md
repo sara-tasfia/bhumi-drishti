@@ -46,9 +46,16 @@ Over 16.5 million smallholder families in Bangladesh cultivate 1–2 bighas of l
 - **1-Tap Location (`📍 আমার এলাকা`)**: Browser GPS resolves latitude/longitude to the district boundary in seconds.
 - **Spoken Voice Output (`🔊 শুনুন`)**: Reads the grounded advisory aloud using native Bangla (`bn-BD`) or English (`en-US`) text-to-speech.
 
-### 🌐 4. 100% Complete Bilingual Support (English & বাংলা)
+### 🌐 4. 100% Complete Bilingual Support (English & বাংলা) & Dark Mode
 - 1-click `[🌐 English / বাংলা]` toggle in the header.
+- **Astryx Deep Dark Mode (`🌙 ডার্ক মোড / ☀️ লাইট মোড`)**: 1-click theme switcher with persistent storage and high-contrast agricultural palette.
 - Dynamic translations across all cards, modals, Leaflet map legends, tooltips, and disclaimers.
+
+### 🏛️ 5. Thana & Upazila Micro-Location Search (NEW)
+- **135 Upazilas Covered**: Instant search across 13 major agricultural districts.
+- **Live Autocomplete**: Real-time suggestion dropdown as the farmer types in Bangla or English (e.g. "বীরগঞ্জ", "মিঠাপুকুর", "সাভার").
+- **Dedicated Dropdown Selector**: Filter by specific Thana/Upazila alongside District.
+- **Pinpoint Weather & Soil**: Queries Open-Meteo & SoilGrids at the exact geographic coordinates of the selected Upazila.
 
 ---
 
@@ -61,24 +68,71 @@ Over 16.5 million smallholder families in Bangladesh cultivate 1–2 bighas of l
 
 ---
 
-## 4. How to Run
+## 4. How to Run on Another PC (Quick Setup Guide)
 
-### Single-Command Launch (Backend + Frontend)
+### Prerequisites
+- **Git**
+- **Python 3.10+**
+- **Node.js 18+** & **npm**
+
+### Step 1: Clone the Repository
+```bash
+git clone https://github.com/sara-tasfia/bhumi-drishti.git
+cd bhumi-drishti
+```
+
+### Step 2: Backend Setup
+```bash
+# 1. Create and activate a Python virtual environment
+python3 -m venv .venv
+
+# On macOS / Linux:
+source .venv/bin/activate
+# On Windows (Command Prompt / PowerShell):
+# .venv\Scripts\activate
+
+# 2. Install backend dependencies
+pip install -r requirements.txt
+```
+
+### Step 3: Frontend Setup
+```bash
+cd frontend
+npm install
+cd ..
+```
+
+### Step 4: Run the Application
+#### Option A: One-Command Startup (macOS / Linux / Git Bash)
 ```bash
 ./run_dev.sh
 ```
-- **Web Application**: `http://localhost:3000`
-- **FastAPI Backend & Swagger Docs**: `http://localhost:8000/docs`
 
-### Setting Gemini API Key
+#### Option B: Manual Startup (Two Terminal Windows)
+* **Terminal 1 (Backend API)**:
+  ```bash
+  python3 -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+  ```
+* **Terminal 2 (Frontend Web App)**:
+  ```bash
+  cd frontend
+  npm run dev
+  ```
+
+### Step 5: Open in Browser
+- **Web App**: [http://localhost:3000](http://localhost:3000)
+- **FastAPI Interactive Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+### Setting Gemini API Key (Optional)
 You can set your Gemini API key in any of three ways:
 1. Directly in the web app UI by clicking the **"Connect Gemini API Key"** button in the Land Intelligence header.
 2. In `.env`:
    ```bash
-   echo "GEMINI_API_KEY=your_key_here" >> .env
+   cp .env.example .env
+   # Add your key inside .env:
+   # GEMINI_API_KEY=your_key_here
    ```
 3. Via terminal environment variable:
    ```bash
    export GEMINI_API_KEY="your_key_here"
    ```
-# bhumi-drishti-code
