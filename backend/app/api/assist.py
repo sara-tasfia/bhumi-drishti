@@ -21,6 +21,7 @@ class TextQueryRequest(BaseModel):
 
 class LandIntelligenceRequest(BaseModel):
     district_id: str
+    upazila_id: Optional[str] = None
     land_size_bigha: float = 1.0
     target_crop_id: Optional[str] = None
     seed_variety: Optional[str] = None
@@ -112,7 +113,8 @@ def get_land_intelligence(req: LandIntelligenceRequest, x_gemini_api_key: Option
             land_size_bigha=req.land_size_bigha,
             target_crop_id=req.target_crop_id,
             seed_variety=req.seed_variety,
-            query_text=req.query_text
+            query_text=req.query_text,
+            upazila_id=req.upazila_id
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

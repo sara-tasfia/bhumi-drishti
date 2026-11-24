@@ -11,6 +11,16 @@ def load_districts() -> List[Dict[str, Any]]:
     with open(DATA_DIR / "districts.json", "r", encoding="utf-8") as f:
         return json.load(f)
 
+def load_upazilas(district_id: str = None) -> List[Dict[str, Any]]:
+    upazila_file = DATA_DIR / "upazilas.json"
+    if not upazila_file.exists():
+        return []
+    with open(upazila_file, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    if district_id:
+        return [u for u in data if u.get("district_id") == district_id]
+    return data
+
 def load_crops() -> List[Dict[str, Any]]:
     with open(DATA_DIR / "crops.json", "r", encoding="utf-8") as f:
         return json.load(f)
@@ -126,20 +136,22 @@ def generate_historical_dataset() -> pd.DataFrame:
 
     return pd.DataFrame(records)
 
-def get_current_season_features(district_id: str, crop_id: str) -> Dict[str, Any]:
+def get_current_season_features(district_id: str, crop_id: str, upazila_id: Optional[str] = None) -> Dict[str, Any]:
     """
-    Returns current season observations for the given district and crop,
+    Returns current season observations for the given district, upazila and crop,
     querying live Open-Meteo Weather API & ISRIC SoilGrids REST API with caching.
     """
     districts = {d["id"]: d for d in load_districts()}
     crops = {c["id"]: c for c in load_crops()}
+    upazilas = {u["id"]: u for u in load_upazilas()}
 
     dist = districts.get(district_id, districts["rangpur"])
     crop = crops.get(crop_id, crops["aman_rice"])
+    upazila = upazilas.get(upazila_id) if upazila_id else None
 
     try:
         from backend.app.services.live_api import get_live_environmental_features
-        live_res = get_live_environmental_features(dist, crop)
+        live_res = get_live_environmental_features(dist, crop, upazila=upazila)
         live_res["baseline_yield_tha"] = crop["baseline_yield_tha"]
         return live_res
     except Exception as e:

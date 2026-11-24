@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 
-from backend.app.data.geo_features import load_districts, load_crops, get_district_geojson
+from backend.app.data.geo_features import load_districts, load_crops, load_upazilas, get_district_geojson
 from backend.app.ml.model import predict_crop_outcome, get_models
 from backend.app.services.grounding import generate_grounded_bangla_summary, generate_grounded_english_summary
 
@@ -11,12 +11,34 @@ router = APIRouter(prefix="/api", tags=["Predictive Core"])
 class PredictRequest(BaseModel):
     district_id: str
     crop_id: str
+    upazila_id: Optional[str] = None
     visual_symptoms: Optional[List[str]] = None
 
 @router.get("/districts")
 def get_all_districts():
     """Returns list of supported agricultural districts in Bangladesh."""
     return load_districts()
+
+@router.get("/upazilas")
+def get_all_upazilas(district_id: Optional[str] = None, search: Optional[str] = None):
+    """Returns list of Upazilas/Thanas, optionally filtered by district or search term."""
+    upazilas = load_upazilas(district_id=district_id)
+    if search:
+        s = search.lower().strip()
+        upazilas = [
+            u for u in upazilas
+            if s in u["name_en"].lower() or s in u["name_bn"] or s in u["district_name_en"].lower() or s in u["district_name_bn"]
+        ]
+    return upazilas
+
+@router.get("/upazilas/{upazila_id}")
+def get_single_upazila(upazila_id: str):
+    """Returns specific Upazila/Thana information."""
+    upazilas = load_upazilas()
+    for u in upazilas:
+        if u["id"] == upazila_id:
+            return u
+    raise HTTPException(status_code=404, detail="Upazila not found")
 
 @router.get("/crops")
 def get_all_crops():
@@ -37,6 +59,7 @@ def predict_crop(req: PredictRequest):
         outcome = predict_crop_outcome(
             district_id=req.district_id,
             crop_id=req.crop_id,
+            upazila_id=req.upazila_id,
             visual_symptoms=req.visual_symptoms
         )
         outcome["explanation_bn"] = generate_grounded_bangla_summary(outcome)

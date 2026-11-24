@@ -23,9 +23,9 @@ def get_models():
             _metrics = json.load(f)
     return _yield_pipeline, _drought_pipeline, _waterlog_pipeline, _metrics
 
-def predict_crop_outcome(district_id: str, crop_id: str, visual_symptoms: Optional[list] = None) -> Dict[str, Any]:
+def predict_crop_outcome(district_id: str, crop_id: str, upazila_id: Optional[str] = None, visual_symptoms: Optional[list] = None) -> Dict[str, Any]:
     yield_pipe, drought_pipe, waterlog_pipe, metrics = get_models()
-    features = get_current_season_features(district_id, crop_id)
+    features = get_current_season_features(district_id, crop_id, upazila_id=upazila_id)
 
     if visual_symptoms:
         if "soil_cracking" in visual_symptoms or "moisture_stress" in visual_symptoms:

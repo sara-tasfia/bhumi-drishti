@@ -106,3 +106,137 @@ body {
   border-radius: 0.75rem;
   z-index: 10;
 }
+
+/* Comprehensive Dark Mode */
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: #0c1411 !important;
+  color: #f1f7f4 !important;
+}
+
+html.dark header,
+html.dark .bg-white {
+  background-color: #14221d !important;
+  color: #f1f7f4 !important;
+}
+
+html.dark .bg-\[\#fdfbf7\] {
+  background-color: #162620 !important;
+}
+
+html.dark .bg-\[\#f4f6f2\] {
+  background-color: #0f1a16 !important;
+}
+
+html.dark .bg-\[\#e9ece6\] {
+  background-color: #1b2e27 !important;
+}
+
+html.dark .bg-\[\#f0fdf4\] {
+  background-color: #11281e !important;
+  color: #86efac !important;
+}
+
+html.dark .bg-\[\#fefce8\] {
+  background-color: #26210f !important;
+  color: #fde047 !important;
+}
+
+html.dark .bg-\[\#fef2f2\] {
+  background-color: #2a1313 !important;
+  color: #fca5a5 !important;
+}
+
+html.dark .bg-\[\#eff6ff\] {
+  background-color: #102133 !important;
+  color: #93c5fd !important;
+}
+
+html.dark .bg-\[\#fdf8f4\] {
+  background-color: #241c14 !important;
+  color: #fcd34d !important;
+}
+
+html.dark .border-\[\#d0d7cd\],
+html.dark .border-\[\#dcc19e\],
+html.dark .border-\[\#ebdcc5\] {
+  border-color: #273d34 !important;
+}
+
+html.dark .border-\[\#86efac\],
+html.dark .border-\[\#bbf7d0\] {
+  border-color: #1e5239 !important;
+}
+
+html.dark .border-\[\#fcd34d\],
+html.dark .border-\[\#fef08a\] {
+  border-color: #594819 !important;
+}
+
+html.dark .border-\[\#fca5a5\],
+html.dark .border-\[\#fecaca\] {
+  border-color: #572020 !important;
+}
+
+html.dark .border-\[\#bfdbfe\] {
+  border-color: #1e3a5f !important;
+}
+
+html.dark .text-\[\#1c2826\] {
+  color: #f1f7f4 !important;
+}
+
+html.dark .text-\[\#43544f\] {
+  color: #c2d6ce !important;
+}
+
+html.dark .text-\[\#6f807a\] {
+  color: #92aba2 !important;
+}
+
+html.dark .text-\[\#1b4d3e\] {
+  color: #4ade80 !important;
+}
+
+html.dark .text-\[\#14532d\] {
+  color: #86efac !important;
+}
+
+html.dark .text-\[\#78350f\] {
+  color: #fde68a !important;
+}
+
+html.dark .text-\[\#7f1d1d\] {
+  color: #fca5a5 !important;
+}
+
+html.dark .text-\[\#1e3a8a\] {
+  color: #93c5fd !important;
+}
+
+html.dark input,
+html.dark select,
+html.dark textarea {
+  background-color: #182823 !important;
+  color: #f1f7f4 !important;
+  border-color: #314d43 !important;
+}
+
+html.dark select option {
+  background-color: #14221d !important;
+  color: #f1f7f4 !important;
+}
+
+html.dark .leaflet-container {
+  background-color: #14221d !important;
+}
+
+html.dark .leaflet-popup-content-wrapper,
+html.dark .leaflet-popup-tip {
+  background-color: #14221d !important;
+  color: #f1f7f4 !important;
+  border: 1px solid #273d34 !important;
+}

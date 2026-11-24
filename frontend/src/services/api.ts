@@ -1,3 +1,7 @@
+import { type Upazila, UPAZILAS, getUpazilasByDistrict, searchLocations } from '../data/upazilas'
+export type { Upazila }
+export { UPAZILAS, getUpazilasByDistrict, searchLocations }
+
 const KEY_STORAGE = 'bhumi_gemini_api_key'
 
 export function getClientGeminiKey(): string | null {
@@ -63,6 +67,7 @@ export interface Crop {
 
 export interface PredictionResult {
   district: { id: string; name_en: string; name_bn: string }
+  upazila?: { id: string; name_en: string; name_bn: string } | null
   crop: { id: string; name_en: string; name_bn: string; season: string; season_bn: string }
   prediction: {
     yield_band: string
@@ -128,6 +133,14 @@ export interface LandIntelligenceResult {
     lat: number
     lon: number
   }
+  upazila?: {
+    id: string
+    name_en: string
+    name_bn: string
+    soil_type: string
+    lat: number
+    lon: number
+  } | null
   land_size_bigha: number
   selected_crop: {
     id: string
@@ -228,6 +241,17 @@ export async function fetchCrops(): Promise<Crop[]> {
   return FALLBACK_CROPS
 }
 
+export async function fetchUpazilas(districtId?: string): Promise<Upazila[]> {
+  try {
+    const url = districtId ? `/api/upazilas?district_id=${districtId}` : '/api/upazilas'
+    const res = await apiFetch(url, { headers: getAuthHeaders() })
+    if (res.ok) return await res.json()
+  } catch (e) {
+    console.warn('Backend upazilas unavailable, using bundled fallback:', e)
+  }
+  return districtId ? getUpazilasByDistrict(districtId) : UPAZILAS
+}
+
 export async function fetchLiveOpenMeteoBrowser(lat: number, lon: number, annualRainfall: number = 2000) {
   try {
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&current=temperature_2m,relative_humidity_2m,precipitation,soil_moisture_0_to_1cm&past_days=14&forecast_days=7&timezone=Asia%2FDhaka`
@@ -292,22 +316,28 @@ export async function fetchLiveSoilGridsBrowser(lat: number, lon: number) {
   return null
 }
 
-export async function runPrediction(districtId: string, cropId: string, symptoms?: string[]): Promise<PredictionResult> {
+export async function runPrediction(districtId: string, cropId: string, upazilaId?: string, symptoms?: string[]): Promise<PredictionResult> {
   const dist = FALLBACK_DISTRICTS.find(d => d.id === districtId) || FALLBACK_DISTRICTS[0]
+  const upz = upazilaId ? UPAZILAS.find(u => u.id === upazilaId) : null
+  const targetLat = upz ? upz.lat : dist.lat
+  const targetLon = upz ? upz.lon : dist.lon
   const distAnnualRain = (dist as any).avg_annual_rainfall_mm || 2000
 
   // 1. Fetch live Open-Meteo weather & SoilGrids directly from browser in parallel with backend
-  const liveWeatherPromise = dist.lat && dist.lon ? fetchLiveOpenMeteoBrowser(dist.lat, dist.lon, distAnnualRain) : Promise.resolve(null)
-  const liveSoilPromise = dist.lat && dist.lon ? fetchLiveSoilGridsBrowser(dist.lat, dist.lon) : Promise.resolve(null)
+  const liveWeatherPromise = targetLat && targetLon ? fetchLiveOpenMeteoBrowser(targetLat, targetLon, distAnnualRain) : Promise.resolve(null)
+  const liveSoilPromise = targetLat && targetLon ? fetchLiveSoilGridsBrowser(targetLat, targetLon) : Promise.resolve(null)
 
   try {
     const res = await apiFetch('/api/predict', {
       method: 'POST',
       headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ district_id: districtId, crop_id: cropId, visual_symptoms: symptoms })
+      body: JSON.stringify({ district_id: districtId, crop_id: cropId, upazila_id: upazilaId, visual_symptoms: symptoms })
     })
     if (res.ok) {
       const result: PredictionResult = await res.json()
+      if (upz) {
+        result.upazila = { id: upz.id, name_en: upz.name_en, name_bn: upz.name_bn }
+      }
       const [liveWeather, liveSoil] = await Promise.all([liveWeatherPromise, liveSoilPromise])
 
       if (liveWeather) {
@@ -332,6 +362,9 @@ export async function runPrediction(districtId: string, cropId: string, symptoms
 
   // Fallback to local model enriched with live browser APIs
   const basePred = generateFallbackPrediction(districtId, cropId, symptoms)
+  if (upz) {
+    basePred.upazila = { id: upz.id, name_en: upz.name_en, name_bn: upz.name_bn }
+  }
   const [liveWeather, liveSoil] = await Promise.all([liveWeatherPromise, liveSoilPromise])
   if (liveWeather) {
     basePred.features.total_rainfall_mm = liveWeather.total_rainfall_mm
@@ -352,6 +385,7 @@ export async function runPrediction(districtId: string, cropId: string, symptoms
 
 export async function fetchLandIntelligence(params: {
   district_id: string
+  upazila_id?: string
   land_size_bigha: number
   target_crop_id?: string
   seed_variety?: string
@@ -592,11 +626,27 @@ const CROP_KEYWORDS: Record<string, string[]> = {
 
 function fallbackParseText(text: string) {
   const clean = (text || '').toLowerCase().trim()
+  let matchedUpazila: Upazila | null = null
   let matchedDistrict: District | null = null
-  for (const [distId, kws] of Object.entries(DISTRICT_KEYWORDS)) {
-    if (kws.some(kw => clean.includes(kw.toLowerCase()))) {
-      matchedDistrict = FALLBACK_DISTRICTS.find(d => d.id === distId) || null
+
+  // 1. Check for specific Upazila first
+  for (const u of UPAZILAS) {
+    const u_bn = u.name_bn.split('(')[0].trim()
+    const u_en = u.name_en.split('(')[0].trim().toLowerCase()
+    if ((u_bn.length >= 3 && clean.includes(u_bn)) || (u_en.length >= 3 && clean.includes(u_en))) {
+      matchedUpazila = u
+      matchedDistrict = FALLBACK_DISTRICTS.find(d => d.id === u.district_id) || null
       break
+    }
+  }
+
+  // 2. Check for District
+  if (!matchedDistrict) {
+    for (const [distId, kws] of Object.entries(DISTRICT_KEYWORDS)) {
+      if (kws.some(kw => clean.includes(kw.toLowerCase()))) {
+        matchedDistrict = FALLBACK_DISTRICTS.find(d => d.id === distId) || null
+        break
+      }
     }
   }
 
@@ -621,6 +671,9 @@ function fallbackParseText(text: string) {
       district_id: matchedDistrict ? matchedDistrict.id : (matchedCrop ? undefined : fallbackDist.id),
       district_en: matchedDistrict ? matchedDistrict.name_en : (matchedCrop ? undefined : fallbackDist.name_en),
       district_bn: matchedDistrict ? matchedDistrict.name_bn : (matchedCrop ? undefined : fallbackDist.name_bn),
+      upazila_id: matchedUpazila ? matchedUpazila.id : undefined,
+      upazila_en: matchedUpazila ? matchedUpazila.name_en : undefined,
+      upazila_bn: matchedUpazila ? matchedUpazila.name_bn : undefined,
       crop_id: matchedCrop ? matchedCrop.id : (matchedDistrict ? undefined : fallbackCrop.id),
       crop_en: matchedCrop ? matchedCrop.name_en : (matchedDistrict ? undefined : fallbackCrop.name_en),
       crop_bn: matchedCrop ? matchedCrop.name_bn : (matchedDistrict ? undefined : fallbackCrop.name_bn),

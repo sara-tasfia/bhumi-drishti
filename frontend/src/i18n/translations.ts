@@ -9,6 +9,11 @@ export const translations = {
     modeFarmer: 'সহজ মোড (কৃষক)',
     modeOfficer: 'অফিসার মোড',
     switchLang: 'English',
+    darkMode: 'ডার্ক মোড',
+    lightMode: 'লাইট মোড',
+    selectUpazila: 'থানা / উপজেলা নির্বাচন করুন',
+    allUpazilas: 'সব থানা / উপজেলা',
+    upazilaLabel: 'উপজেলা:',
 
     // Farmer Mode Box
     farmerTag: '🌾 কৃষক ভাইদের জন্য সহজ ইনপুট',
@@ -20,7 +25,7 @@ export const translations = {
     btnLocation: 'আমার এলাকা',
     btnLocationSub: 'জিপিএস দিয়ে অবস্থান ধরুন',
     btnLocationLoading: 'শনাক্ত হচ্ছে...',
-    searchPlaceholder: 'বা সহজ বাংলায় লিখে খুঁজুন (যেমন: রংপুরে আমন ধান, খরা আছে নি?)...',
+    searchPlaceholder: 'থানা, জেলা বা ফসলের নাম লিখে খুঁজুন (যেমন: বীরগঞ্জে আলু, মিঠাপুকুরে ধান)...',
     btnSearch: 'খুঁজুন',
     currentCropArea: 'বর্তমান ফসল ও এলাকা:',
 
@@ -116,6 +121,11 @@ export const translations = {
     modeFarmer: 'Farmer Mode (Simple)',
     modeOfficer: 'Officer Mode (Analytics)',
     switchLang: 'বাংলা',
+    darkMode: 'Dark Mode',
+    lightMode: 'Light Mode',
+    selectUpazila: 'Select Thana / Upazila',
+    allUpazilas: 'All Thanas / Upazilas',
+    upazilaLabel: 'Upazila:',
 
     // Farmer Mode Box
     farmerTag: '🌾 Zero-Friction Input for Farmers',
@@ -127,7 +137,7 @@ export const translations = {
     btnLocation: 'My Location',
     btnLocationSub: 'Auto-detect via phone GPS',
     btnLocationLoading: 'Locating...',
-    searchPlaceholder: 'Or search freely (e.g. Aman rice in Rangpur, is there drought risk?)...',
+    searchPlaceholder: 'Search by Thana, District, or Crop (e.g. Potato in Birganj, Rice in Mithapukur)...',
     btnSearch: 'Search',
     currentCropArea: 'Active Crop & District:',
 

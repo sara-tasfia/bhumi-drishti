@@ -164,21 +164,24 @@ def calculate_dynamic_sentinel_ndvi(
 
 def get_live_environmental_features(
     district: Dict[str, Any],
-    crop: Dict[str, Any]
+    crop: Dict[str, Any],
+    upazila: Optional[Dict[str, Any]] = None
 ) -> Dict[str, Any]:
     """
     Orchestrates live Open-Meteo and SoilGrids API calls with 15-minute caching.
+    Uses precise upazila/thana coordinates if provided, otherwise district centroid.
     Gracefully falls back to calibrated district baselines if APIs are unreachable.
     """
-    cache_key = f"{district['id']}_{crop['id']}"
+    upz_id = upazila.get("id") if upazila else "all"
+    cache_key = f"{district['id']}_{upz_id}_{crop['id']}"
     now = time.time()
     if cache_key in _API_CACHE:
         ts, cached_data = _API_CACHE[cache_key]
         if now - ts < CACHE_TTL_SECONDS:
             return cached_data
 
-    lat = district["lat"]
-    lon = district["lon"]
+    lat = upazila.get("lat") if upazila else district["lat"]
+    lon = upazila.get("lon") if upazila else district["lon"]
     avg_annual_rainfall = district.get("avg_annual_rainfall_mm", 2000)
 
     # 1. Fetch Live Open-Meteo Weather
@@ -241,6 +244,9 @@ def get_live_environmental_features(
         "district_id": district["id"],
         "district_name_en": district["name_en"],
         "district_name_bn": district["name_bn"],
+        "upazila_id": upazila.get("id") if upazila else None,
+        "upazila_name_en": upazila.get("name_en") if upazila else None,
+        "upazila_name_bn": upazila.get("name_bn") if upazila else None,
         "crop_id": crop["id"],
         "crop_name_en": crop["name_en"],
         "crop_name_bn": crop["name_bn"],

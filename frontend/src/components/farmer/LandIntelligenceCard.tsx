@@ -31,6 +31,7 @@ import type { Language } from '../../i18n/translations'
 
 interface LandIntelligenceCardProps {
   district: District
+  upazilaId?: string
   currentCropId: string
   lang?: Language
   onApplyCrop?: (cropId: string) => void
@@ -38,6 +39,7 @@ interface LandIntelligenceCardProps {
 
 export const LandIntelligenceCard: React.FC<LandIntelligenceCardProps> = ({
   district,
+  upazilaId,
   currentCropId,
   lang = 'bn',
   onApplyCrop
@@ -74,7 +76,7 @@ export const LandIntelligenceCard: React.FC<LandIntelligenceCardProps> = ({
 
   useEffect(() => {
     runIntelligence(selectedCropId, landSize)
-  }, [district.id])
+  }, [district.id, upazilaId])
 
   const checkKey = async () => {
     try {
@@ -125,6 +127,7 @@ export const LandIntelligenceCard: React.FC<LandIntelligenceCardProps> = ({
     try {
       const data = await fetchLandIntelligence({
         district_id: district.id,
+        upazila_id: upazilaId || undefined,
         land_size_bigha: size,
         target_crop_id: cropId,
         seed_variety: seedVariety || undefined,
@@ -159,8 +162,8 @@ export const LandIntelligenceCard: React.FC<LandIntelligenceCardProps> = ({
           </div>
           <p className="text-xs text-[#43544f] mt-1">
             {lang === 'bn'
-              ? `${district.name_bn} জেলার মাটির গুণাগুণ, আর্দ্রতা ও আবহাওয়া অনুসারে সেরা ফসল ও লাভ-ক্ষতির পূর্ণাঙ্গ হিসাব`
-              : `Predicts the best crop and projected earnings based on soil profile and climate in ${district.name_en}`}
+              ? `${result?.upazila?.name_bn ? result.upazila.name_bn + ' উপজেলা, ' : ''}${district.name_bn} জেলার মাটির গুণাগুণ, আর্দ্রতা ও আবহাওয়া অনুসারে সেরা ফসল ও লাভ-ক্ষতির পূর্ণাঙ্গ হিসাব`
+              : `Predicts the best crop and projected earnings based on soil profile and climate in ${result?.upazila?.name_en ? result.upazila.name_en + ' Upazila, ' : ''}${district.name_en}`}
           </p>
         </div>
 

@@ -2,7 +2,7 @@ import re
 import json
 from typing import Dict, Any, Optional, List
 from backend.app.core.geocoder import reverse_geocode_district
-from backend.app.data.geo_features import load_districts, load_crops
+from backend.app.data.geo_features import load_districts, load_crops, load_upazilas
 from backend.app.services.gemini_service import call_gemini_multimodal, get_gemini_api_key
 
 DISTRICT_KEYWORDS = {
@@ -96,13 +96,26 @@ Extract the following in strict JSON:
 
     clean_text = (text or "").lower()
     matched_district = None
+    matched_upazila = None
     matched_crop = None
     detected_symptoms = []
 
-    for dist_id, kws in DISTRICT_KEYWORDS.items():
-        if any(kw in clean_text for kw in kws):
-            matched_district = dist_id
+    # 1. Scan for Upazilas / Thanas first (more specific than district)
+    upazilas = load_upazilas()
+    for u in upazilas:
+        u_bn = u["name_bn"].split("(")[0].strip()
+        u_en = u["name_en"].split("(")[0].strip().lower()
+        if (len(u_bn) >= 3 and u_bn in (text or "")) or (len(u_en) >= 3 and u_en in clean_text):
+            matched_upazila = u
+            matched_district = u["district_id"]
             break
+
+    # 2. If no upazila detected, scan for District keywords
+    if not matched_district:
+        for dist_id, kws in DISTRICT_KEYWORDS.items():
+            if any(kw in clean_text for kw in kws):
+                matched_district = dist_id
+                break
 
     if not matched_district and lat is not None and lon is not None:
         geo = reverse_geocode_district(lat, lon)
@@ -137,6 +150,9 @@ Extract the following in strict JSON:
             "district_id": resolved_dist["id"] if resolved_dist else None,
             "district_en": resolved_dist["name_en"] if resolved_dist else None,
             "district_bn": resolved_dist["name_bn"] if resolved_dist else None,
+            "upazila_id": matched_upazila["id"] if matched_upazila else None,
+            "upazila_en": matched_upazila["name_en"] if matched_upazila else None,
+            "upazila_bn": matched_upazila["name_bn"] if matched_upazila else None,
             "crop_id": resolved_crop["id"] if resolved_crop else None,
             "crop_en": resolved_crop["name_en"] if resolved_crop else None,
             "crop_bn": resolved_crop["name_bn"] if resolved_crop else None,

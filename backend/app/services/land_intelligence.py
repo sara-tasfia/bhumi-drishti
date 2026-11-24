@@ -1,7 +1,7 @@
 import json
 import re
 from typing import Dict, Any, Optional, List
-from backend.app.data.geo_features import load_districts, load_crops, get_current_season_features
+from backend.app.data.geo_features import load_districts, load_crops, load_upazilas, get_current_season_features
 from backend.app.services.gemini_service import call_gemini_multimodal, get_gemini_api_key
 
 # Economic benchmarks per bigha (33 decimals) in Bangladesh (BBS / DAE 2025-2026 averages)
@@ -151,16 +151,19 @@ def analyze_land_intelligence(
     seed_variety: Optional[str] = None,
     query_text: Optional[str] = None,
     image_bytes: Optional[bytes] = None,
-    audio_bytes: Optional[bytes] = None
+    audio_bytes: Optional[bytes] = None,
+    upazila_id: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Predicts optimal crop, seasonal calendar, and economic profit potential for a specific land location.
     Integrates Gemini API when key is available, with full expert agricultural fallback.
     """
     districts = {d["id"]: d for d in load_districts()}
+    upazilas = {u["id"]: u for u in load_upazilas()}
     dist = districts.get(district_id, districts["rangpur"])
+    upz = upazilas.get(upazila_id) if upazila_id else None
 
-    feats = get_current_season_features(district_id, target_crop_id or "aman_rice")
+    feats = get_current_season_features(district_id, target_crop_id or "aman_rice", upazila_id=upazila_id)
 
     # Determine primary crop to analyze
     primary_crop_id = target_crop_id if target_crop_id in CROP_ECONOMICS else "aman_rice"
@@ -305,6 +308,14 @@ Respond strictly in valid JSON format matching this schema:
                             "lat": dist["lat"],
                             "lon": dist["lon"]
                         },
+                        "upazila": {
+                            "id": upz["id"],
+                            "name_en": upz["name_en"],
+                            "name_bn": upz["name_bn"],
+                            "soil_type": upz["soil_type"],
+                            "lat": upz["lat"],
+                            "lon": upz["lon"]
+                        } if upz else None,
                         "land_size_bigha": land_size_bigha,
                         "selected_crop": {
                             "id": primary_crop_id,
@@ -353,9 +364,20 @@ Respond strictly in valid JSON format matching this schema:
             except Exception as e:
                 print(f"Error parsing Gemini Land Intelligence JSON: {e}")
 
+    upz_info = {
+        "id": upz["id"],
+        "name_en": upz["name_en"],
+        "name_bn": upz["name_bn"],
+        "soil_type": upz["soil_type"],
+        "lat": upz["lat"],
+        "lon": upz["lon"]
+    } if upz else None
+
     # Fallback to local deterministic calculation
+    upz_prefix_bn = f"{upz['name_bn']} উপজেলা, " if upz else ""
+    upz_prefix_en = f"{upz['name_en']} Upazila, " if upz else ""
     custom_advisory_bn = (
-        f"{dist['name_bn']} জেলায় {land_size_bigha} বিঘা জমিতে {econ['name_bn']} চাষে "
+        f"{upz_prefix_bn}{dist['name_bn']} জেলায় {land_size_bigha} বিঘা জমিতে {econ['name_bn']} চাষে "
         f"আনুমানিক মোট {yield_maund:.0f} মণ ফলন পাওয়া সম্ভব। বর্তমান বাজারমূল্য অনুযায়ী মোট বিক্রয় মূল্য প্রায় "
         f"৳{revenue:,} টাকা এবং বীজ, সার, সেচ ও শ্রমিক বাবদ মোট খরচ হবে প্রায় ৳{total_cost:,} টাকা। "
         f"সব মিলিয়ে প্রত্যাশিত নিট লাভ প্রায় ৳{net_profit:,} টাকা (মুনাফার হার {roi}%)। "
@@ -363,7 +385,7 @@ Respond strictly in valid JSON format matching this schema:
         f"এবং {econ['technique_bn']} অনুসরণ করার পরামর্শ দেওয়া হচ্ছে।"
     )
     custom_advisory_en = (
-        f"For {land_size_bigha} bigha of land in {dist['name_en']}, cultivating {econ['name_en']} is projected "
+        f"For {land_size_bigha} bigha of land in {upz_prefix_en}{dist['name_en']}, cultivating {econ['name_en']} is projected "
         f"to yield approximately {yield_maund:.0f} maunds. At prevailing market rates, gross revenue is estimated at "
         f"৳{revenue:,} BDT against production costs of ৳{total_cost:,} BDT, generating an estimated net profit of "
         f"৳{net_profit:,} BDT (ROI: {roi}%). Recommended seed varieties include {', '.join(econ['recommended_seeds'][:2])} "
@@ -381,6 +403,7 @@ Respond strictly in valid JSON format matching this schema:
             "lat": dist["lat"],
             "lon": dist["lon"]
         },
+        "upazila": upz_info,
         "land_size_bigha": land_size_bigha,
         "selected_crop": {
             "id": primary_crop_id,
