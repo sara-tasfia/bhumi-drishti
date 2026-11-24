@@ -66,3 +66,7 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Local scripts and documentation ignored from repository
+docs/
+push_to_github.sh
